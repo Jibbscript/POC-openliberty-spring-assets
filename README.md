@@ -1,0 +1,1 @@
+# POC-openliberty-spring-assets
