@@ -53,6 +53,9 @@ spec:
           sed -i "s/YWRtaW4=/${DB_ADMINPWD}/" k8s_yamls/adminsecret.yaml
           sed -i "s/YWRtaW4=/${DB_ADMINUSER}/" k8s_yamls/adminsecret.yaml
         
+          # Checking yamls for logging purposes
+          cat k8s_yamls/configmap.yaml
+          cat k8s_yamls/adminsecret.yaml
           # Install the yamls
           oc apply -f k8s_yamls/*.yaml
 
