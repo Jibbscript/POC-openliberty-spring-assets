@@ -1,0 +1,56 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: wf-deployment-pl
+  namespace: kabanero
+  author: Andrew Suh
+  date: 06/08/20
+spec:
+  params:
+    - name: DB_HOST
+      description: Host of where mongo service is
+      default: ""
+    - name: DB_PORT
+      description: Port exposed for DB service, (default 27017)
+      default: "27017"
+    - name: R_HOST
+      description: Host of where Redis service is
+      default: ""
+    - name: R_PORT
+      description: Port of redis (default 6379)
+      default: "6379"
+    - name: DB_ADMINUSER
+      description: You choose admin username for db
+      default: ""
+    - name: DB_ADMINPWD
+      description: You choose admin password for db
+      default: ""
+  resources:
+    - name: git-source
+      type: git
+  tasks:
+    - name: deploy-app
+      resources:
+        inputs:
+          - name: source
+            resource: git-source
+          - name: image
+            resource: image
+      params:
+        - name: RUN_IMAGE
+          value: googlefu/cf-use-image:2.0
+        - name: DB_HOST
+          value: $(params.DB_HOST)
+        - name: DB_PORT
+          value: $(params.DB_PORT)
+        - name: R_HOST
+          value: $(params.R_HOST)
+        - name: R_PORT
+          value: $(params.R_PORT)
+        - name: DB_ADMINUSER
+          value: $(params.DB_ADMINUSER)
+        - name: DB_ADMINPWD
+          value: $(params.DB_ADMINPWD)
+      taskRef:
+        kind: Task
+        name: deploy-app-wf

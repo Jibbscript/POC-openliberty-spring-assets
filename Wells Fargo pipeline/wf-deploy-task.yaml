@@ -1,0 +1,75 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: deploy-app-wf
+  namespace: kabanero
+  author: Andrew Suh
+  date: 06/08/20
+spec:
+  inputs:
+    params:
+      - name: RUN_IMAGE
+        description: The location of the image to run oc commands.
+        default: ""
+      - name: DB_HOST
+        description: Host of where mongo service is
+        default: ""
+      - name: DB_PORT
+        description: Port exposed for DB service, (default 27017)
+        default: ""
+      - name: R_HOST
+        description: Host of where Redis service is
+        default: ""
+      - name: R_PORT
+        description: Port of redis (default 6379)
+        default: ""
+      - name: DB_ADMINUSER
+        description: You choose admin username for db
+        default: ""
+      - name: DB_ADMINPWD
+        description: You choose admin password for db
+        default: ""
+    resources:
+      - name: source
+        type: git
+  steps:
+    - name: deploying-app
+      image: $(inputs.params.RUN_IMAGE)
+      command: ["/bin/sh"]
+      args:
+        - -c
+        - |
+          set -euxo pipefail
+          
+          # Login with the api key
+          # ibmcloud login --apikey ${ibmcloud_api_token} -r us-south
+
+          #Sed to replace values in yamls
+          sed -i "s/<Insert DB hostname/service name>/${DB_HOST}/" k8s_yamls/configmap.yaml
+          sed -i "s/"8081"/${DB_PORT}/" k8s_yamls/configmap.yaml
+          sed -i "s/<Insert redis hostname/service name>/${R_HOST}/" k8s_yamls/configmap.yaml
+          sed -i "s/"6379"/${R_PORT}/" k8s_yamls/configmap.yaml
+
+          sed -i "s/YWRtaW4=/${DB_ADMINPWD}/" k8s_yamls/adminsecret.yaml
+          sed -i "s/YWRtaW4=/${DB_ADMINUSER}/" k8s_yamls/adminsecret.yaml
+        
+          # Install the yamls
+          oc apply -f k8s_yamls/*.yaml
+
+      env:
+        - name: RUN_IMAGE
+          value: $(inputs.params.RUN_IMAGE)
+        - name: DB_HOST
+          value: $(inputs.params.DB_HOST)
+        - name: DB_PORT
+          value: $(inputs.params.DB_PORT)
+        - name: R_HOST
+          value: $(inputs.params.R_HOST)
+        - name: R_PORT
+          value: $(inputs.params.R_PORT)
+        - name: DB_ADMINUSER
+          value: $(inputs.params.DB_ADMINUSER)
+        - name: DB_ADMINPWD
+          value: $(inputs.params.DB_ADMINPWD)
+      resources: {}
+      workingDir: $(inputs.resources.source.path)
